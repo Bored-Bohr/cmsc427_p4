@@ -10,4 +10,4 @@ unix {
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unknown-pragmas
 }
 RESOURCES += resources.qrc
-OTHER_FILES += perfrag.fsh perfrag.vsh
+OTHER_FILES += perfrag.fsh perfrag.vsh texture.fsh texture.vsh
