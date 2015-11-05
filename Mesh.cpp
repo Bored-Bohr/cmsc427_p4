@@ -375,7 +375,7 @@ void Mesh::storeVBO() {
 
       if(faces[f].vt[1] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[1]));
       else tri_tex.push_back(QVector2D(0,0));
-      
+
       if(faces[f].vt[2] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[2]));
       else tri_tex.push_back(QVector2D(0,0));
     }
