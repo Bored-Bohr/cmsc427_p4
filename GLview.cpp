@@ -66,7 +66,9 @@ void GLview::initializeGL() {
     glEnable(GL_DEPTH_TEST);    // Enable depth buffer
 
     // Prepare a complete shader program...exit on failure
-    if ( !prepareShaderProgram(phong_shader,  ":/perfrag.vsh", ":/perfrag.fsh" ) ) return;
+//    if ( !prepareShaderProgram(phong_shader,  ":/perfrag.vsh", ":/perfrag.fsh" ) ) return;
+//    if ( !prepareShaderProgram(texture_shader,  ":/texture.vsh", ":/texture.fsh" ) ) return;
+    if ( !prepareShaderProgram(phong_shader,  ":/texture.vsh", ":/texture.fsh" ) ) return;
 
     // Set default lighting parameters.
     LightPosition = QVector3D(-2,-2, 3);
@@ -184,31 +186,30 @@ void GLview::paintGL() {
     phong_shader.setAttributeBuffer( "VertexNormal", GL_FLOAT, 0, 3 );
     phong_shader.enableAttributeArray( "VertexNormal" );
 
-    mesh->kdBuffer.bind();
-    phong_shader.setAttributeBuffer( "KdIn", GL_FLOAT, 0, 3 );
-    phong_shader.enableAttributeArray( "KdIn" );
+    mesh->texCoordBuffer.bind();
+    phong_shader.setAttributeBuffer( "VertexTexCoord", GL_FLOAT, 0, 2 );
+    phong_shader.enableAttributeArray( "VertexTexCoord" );
 
-    mesh->kaBuffer.bind();
-    phong_shader.setAttributeBuffer( "KaIn", GL_FLOAT, 0, 3 );
-    phong_shader.enableAttributeArray( "KaIn" );
+    long total_drawn = 0;
+    for(long mtl_idx = 0; mtl_idx < (long)mesh->materials.size(); mtl_idx++) {
+//      cout << mesh->materials.size() << " " << mtl_idx << " " << mesh->materials[mtl_idx].size << endl;
+      phong_shader.setUniformValue("Kd", mesh->materials[mtl_idx].Kd);
+      phong_shader.setUniformValue("Ks", mesh->materials[mtl_idx].Ks);
+      phong_shader.setUniformValue("Ka", mesh->materials[mtl_idx].Ka);
+      phong_shader.setUniformValue("Shininess", mesh->materials[mtl_idx].Ns);
+      phong_shader.setUniformValue("IsTexture", mesh->materials[mtl_idx].is_texture);
+      if(mesh->materials[mtl_idx].is_texture) {
+        mesh->materials[mtl_idx].map_Kd->bind(0);
+        phong_shader.setUniformValue("Tex1", GLuint(0));
+      }
 
-    mesh->ksBuffer.bind();
-    phong_shader.setAttributeBuffer( "KsIn", GL_FLOAT, 0, 3 );
-    phong_shader.enableAttributeArray( "KsIn" );
+      // Hint: texture unit 0 is free for your textures. I've bound the shadow map to texture unit 1.
+      glActiveTexture(GL_TEXTURE1);
+      glBindTexture(GL_TEXTURE_2D, depthTex);
 
-    mesh->shininessBuffer.bind();
-    phong_shader.setAttributeBuffer( "ShininessIn", GL_FLOAT, 0, 1 );
-    phong_shader.enableAttributeArray( "ShininessIn" );
-//    phong_shader.setUniformValue("Kd", mesh->materials[0].Kd);
-//    phong_shader.setUniformValue("Ks", mesh->materials[0].Ks);
-//    phong_shader.setUniformValue("Ka", mesh->materials[0].Ka);
-//    phong_shader.setUniformValue("Shininess", mesh->materials[0].Ns);
-
-    // Hint: texture unit 0 is free for your textures. I've bound the shadow map to texture unit 1.
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, depthTex);
-
-    glDrawArrays( GL_TRIANGLES, 0, 3*mesh->faces.size() );
+      glDrawArrays( GL_TRIANGLES, total_drawn, 3*mesh->materials[mtl_idx].size );
+      total_drawn += 3*mesh->materials[mtl_idx].size;
+    }
 }
 
 void GLview::keyPressGL(QKeyEvent* e) {

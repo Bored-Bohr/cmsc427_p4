@@ -2,5 +2,7 @@
 <qresource>
     <file>perfrag.fsh</file>
     <file>perfrag.vsh</file>
+    <file>texture.fsh</file>
+    <file>texture.vsh</file>
 </qresource>
 </RCC>
