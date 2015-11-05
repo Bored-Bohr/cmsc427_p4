@@ -24,7 +24,7 @@ void main() {
     vec3 v = normalize(e - p);   
 
     vec3 r = -s + 2 * dot(s, n) * n;
-    vec3 L = Li * ( Ka + Kd * max(0, dot(n, s)) + Ks * pow( max(0, dot(r,v)), Shininess) );   
+    vec3 L = Li * ( Ka + Kd * max(0, dot(n, s)) + Ks * pow( max(0, dot(r,v)), Shininess) );
     // -----------------------
     FragColor = vec4(L, 1.0); // no transparancy
 }
