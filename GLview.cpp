@@ -66,8 +66,6 @@ void GLview::initializeGL() {
     glEnable(GL_DEPTH_TEST);    // Enable depth buffer
 
     // Prepare a complete shader program...exit on failure
-//    if ( !prepareShaderProgram(phong_shader,  ":/perfrag.vsh", ":/perfrag.fsh" ) ) return;
-//    if ( !prepareShaderProgram(texture_shader,  ":/texture.vsh", ":/texture.fsh" ) ) return;
     if ( !prepareShaderProgram(phong_shader,  ":/texture.vsh", ":/texture.fsh" ) ) return;
 
     // Set default lighting parameters.
@@ -192,7 +190,6 @@ void GLview::paintGL() {
 
     long total_drawn = 0;
     for(long mtl_idx = 0; mtl_idx < (long)mesh->materials.size(); mtl_idx++) {
-//      cout << mesh->materials.size() << " " << mtl_idx << " " << mesh->materials[mtl_idx].size << endl;
       phong_shader.setUniformValue("Kd", mesh->materials[mtl_idx].Kd);
       phong_shader.setUniformValue("Ks", mesh->materials[mtl_idx].Ks);
       phong_shader.setUniformValue("Ka", mesh->materials[mtl_idx].Ka);
