@@ -21,6 +21,7 @@ void Mesh::add_face(int v0, int v1, int v2, int v3, int mtl_idx) {
 
 
 void Mesh::add_face(const vector<int> &cur_vert, const vector<int> &cur_vt, const vector<int> &cur_vn, int mtl_idx) {
+  materials[mtl_idx].size += cur_vert.size() - 2;
   if(cur_vert.size() > 3) {
     // If number of edges in face is greater than 3,
     // decompose into triangles as a triangle fan.
@@ -353,60 +354,30 @@ void Mesh::storeVBO() {
   vector<QVector3D> tri_vert;
   vector<QVector3D> tri_norm;
   vector<QVector2D> tri_tex;
-  vector<QVector3D> tri_kd;
-  vector<QVector3D> tri_ks;
-  vector<QVector3D> tri_ka;
-  vector<float> tri_shin;
+  for(long mtl_idx = 0; mtl_idx < (long)materials.size(); mtl_idx++) {
+    for(long f = 0; f < (long)faces.size(); f++) {
+      if(mtl_idx != faces[f].mtl_idx) continue;
+      tri_vert.push_back(vertices.at(faces[f].vert[0]));
+      tri_vert.push_back(vertices.at(faces[f].vert[1]));
+      tri_vert.push_back(vertices.at(faces[f].vert[2]));
 
-  for(long f = 0; f < (long)faces.size(); f++) {
-    tri_vert.push_back(vertices.at(faces[f].vert[0]));
-    tri_vert.push_back(vertices.at(faces[f].vert[1]));
-    tri_vert.push_back(vertices.at(faces[f].vert[2]));
-
-    for(int d = 0; d < 3; d++) {
-      if(faces[f].vnidx[d] >= 0) {
-	tri_norm.push_back(normals.at(faces[f].vnidx[d]));
+      for(int d = 0; d < 3; d++) {
+        if(faces[f].vnidx[d] >= 0) {
+          tri_norm.push_back(normals.at(faces[f].vnidx[d]));
+        }
+        else {
+          tri_norm.push_back(normals.at(faces[f].vert[d]));
+        }
       }
-      else {
-	tri_norm.push_back(normals.at(faces[f].vert[d]));
-      }
-    }
 
-    if(faces[f].vt[0] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[0]));
-    else tri_tex.push_back(QVector2D(0,0));
+      if(faces[f].vt[0] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[0]));
+      else tri_tex.push_back(QVector2D(0,0));
 
-    if(faces[f].vt[1] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[1]));
-    else tri_tex.push_back(QVector2D(0,0));
-      
-    if(faces[f].vt[2] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[2]));
-    else tri_tex.push_back(QVector2D(0,0));
+      if(faces[f].vt[1] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[1]));
+      else tri_tex.push_back(QVector2D(0,0));
 
-    if(faces[f].mtl_idx >= 0) {
-        tri_kd.push_back(materials[faces[f].mtl_idx].Kd);
-        tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
-        tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
-        tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
-        tri_kd.push_back(materials[faces[f].mtl_idx].Kd);
-        tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
-        tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
-        tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
-        tri_kd.push_back(materials[faces[f].mtl_idx].Kd);
-        tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
-        tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
-        tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
-    } else {
-        tri_kd.push_back(materials[0].Kd);
-        tri_ks.push_back(materials[0].Ks);
-        tri_ka.push_back(materials[0].Ka);
-        tri_shin.push_back(materials[0].Ns);
-        tri_kd.push_back(materials[0].Kd);
-        tri_ks.push_back(materials[0].Ks);
-        tri_ka.push_back(materials[0].Ka);
-        tri_shin.push_back(materials[0].Ns);
-        tri_kd.push_back(materials[0].Kd);
-        tri_ks.push_back(materials[0].Ks);
-        tri_ka.push_back(materials[0].Ka);
-        tri_shin.push_back(materials[0].Ns);
+      if(faces[f].vt[2] >= 0) tri_tex.push_back(texCoords.at(faces[f].vt[2]));
+      else tri_tex.push_back(QVector2D(0,0));
     }
   }
 
@@ -425,24 +396,5 @@ void Mesh::storeVBO() {
   texCoordBuffer.bind();
   texCoordBuffer.allocate(&tri_tex[0] , sizeof( QVector2D ) * tri_tex.size());
 
-  kdBuffer.create();
-  kdBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-  kdBuffer.bind();
-  kdBuffer.allocate(&tri_kd[0] , sizeof( QVector3D ) * tri_kd.size());
-
-  ksBuffer.create();
-  ksBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-  ksBuffer.bind();
-  ksBuffer.allocate(&tri_ks[0] , sizeof( QVector3D ) * tri_ks.size());
-
-  kaBuffer.create();
-  kaBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-  kaBuffer.bind();
-  kaBuffer.allocate(&tri_ka[0] , sizeof( QVector3D ) * tri_ka.size());
-
-  shininessBuffer.create();
-  shininessBuffer.setUsagePattern( QOpenGLBuffer::StaticDraw );
-  shininessBuffer.bind();
-  shininessBuffer.allocate(&tri_shin[0] , sizeof( float ) * tri_shin.size());
 }
 

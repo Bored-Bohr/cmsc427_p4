@@ -15,11 +15,13 @@ struct Material {
     Kd = QVector3D(0.8, 0.8, 0.8);
     Ks = QVector3D(0.95, 0.95, 0.95);
     Ka = QVector3D(0.1, 0.1, 0.1);
+    size = 0;
   }
   QString name;
   QVector3D Ka, Kd, Ks;
   float Ns;
   bool is_texture;
+  long size;
   QOpenGLTexture *map_Kd;
 };
 
@@ -65,7 +67,7 @@ struct Mesh {
 
   vector<Material> materials;
 
-  QOpenGLBuffer vertexBuffer, normalBuffer, texCoordBuffer, kdBuffer, ksBuffer, kaBuffer, shininessBuffer;
+  QOpenGLBuffer vertexBuffer, normalBuffer, texCoordBuffer, kdBuffer, ksBuffer, kaBuffer, shininessBuffer, isTextureBuffer;
   
   bool load_obj(QString filename, QString dir);
   bool load_mtl(QString filename, QString dir);
