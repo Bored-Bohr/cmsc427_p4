@@ -386,12 +386,27 @@ void Mesh::storeVBO() {
         tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
         tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
         tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
+        tri_kd.push_back(materials[faces[f].mtl_idx].Kd);
+        tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
+        tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
+        tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
+        tri_kd.push_back(materials[faces[f].mtl_idx].Kd);
+        tri_ks.push_back(materials[faces[f].mtl_idx].Ks);
+        tri_ka.push_back(materials[faces[f].mtl_idx].Ka);
+        tri_shin.push_back(materials[faces[f].mtl_idx].Ns);
     } else {
         tri_kd.push_back(materials[0].Kd);
         tri_ks.push_back(materials[0].Ks);
         tri_ka.push_back(materials[0].Ka);
         tri_shin.push_back(materials[0].Ns);
-
+        tri_kd.push_back(materials[0].Kd);
+        tri_ks.push_back(materials[0].Ks);
+        tri_ka.push_back(materials[0].Ka);
+        tri_shin.push_back(materials[0].Ns);
+        tri_kd.push_back(materials[0].Kd);
+        tri_ks.push_back(materials[0].Ks);
+        tri_ka.push_back(materials[0].Ka);
+        tri_shin.push_back(materials[0].Ns);
     }
   }
 
