@@ -21,7 +21,7 @@ protected:
     void resizeGL(int width, int height);
 
     Mesh *mesh;  // Geometry data.
-    QOpenGLShaderProgram phong_shader;
+    QOpenGLShaderProgram phong_shader, texture_shader;
 
     // Camera parameters for the view frustum --------------
     QVector3D eye, lookCenter, lookUp;
