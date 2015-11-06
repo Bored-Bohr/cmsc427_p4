@@ -152,8 +152,15 @@ bool Mesh::load_obj(QString filename, QString dir) {
   // Only computed vertex normals if absent in obj file
   if(normals.size() == 0) compute_vertex_normals();
   recenter();
+  compute_dimensions();
   cout << "normals.size()=" << normals.size() << endl;
   return true;
+}
+
+void Mesh::compute_dimensions() {
+    QVector3D maxPoint, minPoint;
+    get_AABB(maxPoint, minPoint);
+    dimensions = maxPoint - minPoint;
 }
 
 void Mesh::make_AABB(const QVector3D &A, const QVector3D &B) {

@@ -63,7 +63,9 @@ struct Mesh {
   vector< vector<long> > facelist; // Adjacent face list for each vertex
   vector<QVector2D> texCoords; // Texture coordinates for each vertex.
   vector<QVector3D> normals; // Vertex normals.
-  vector<Mesh_Face> faces; // Mesh faces. 
+  vector<Mesh_Face> faces; // Mesh faces.
+  long position;
+  QVector3D dimensions;
 
   vector<Material> materials;
 
@@ -80,6 +82,7 @@ struct Mesh {
   void storeVBO();
 
   void recenter();
+  void compute_dimensions();
   void get_AABB(QVector3D &maxPoint, QVector3D &minPoint);
 
   void add_face(const vector<int> &cur_vert, int mtl_idx);

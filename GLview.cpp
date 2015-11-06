@@ -20,7 +20,7 @@ void Matrix2Quaternion(QQuaternion &Q, QMatrix4x4 &M) {
 GLview::GLview(QWidget *parent)  : QOpenGLWidget(parent) {
     // start off with all transformation flags disabled
     scaleFlag = translateFlag = rotateFlag = false; lastPosFlag = false;
-    mesh = NULL;
+//    mesh = NULL;
     startTimer(20,Qt::PreciseTimer);
 
     elapsed_time.start();
@@ -34,7 +34,7 @@ GLview::GLview(QWidget *parent)  : QOpenGLWidget(parent) {
 
 GLview::~GLview() {
     makeCurrent();
-    if(mesh != NULL) delete mesh;
+//    if(mesh != NULL) delete mesh;
     doneCurrent();
 }
 
@@ -46,13 +46,46 @@ bool GLview::LoadOBJFile(const QString file, const QString path) {
         delete newmesh;
         return false;
     }
-    if(mesh != NULL) {
-        delete mesh;
+
+    if (meshList.size()==0){
+      QVector3D pos0(0, 0, 0);
+//      QQuaternion ori0 = QQuaternion.fromEulerAngles(0, 0, 0);
+      QVector3D pos1;
+      QQuaternion ori1;
+      randCoordOrient(pos1, ori1);
+      positions.push_back(pos0);
+      orientations.push_back(QQuaternion::fromEulerAngles(0.0, 0.0, 0.0));
+      newmesh->position = 0;
+      positions.push_back(pos1);
+      orientations.push_back(ori1);
+    } else {
+      QVector3D pos;
+      QQuaternion ori;
+      randCoordOrient(pos, ori);
+      positions.push_back(pos);
+      orientations.push_back(ori);
+      newmesh->position = positions.size() - 1;
     }
-    mesh = newmesh;
-    mesh->storeVBO();
+
+    meshList.push_back(newmesh);
+    meshList.at(meshList.size()-1)->storeVBO();
+
     doneCurrent();
     return true;
+}
+
+void GLview::randCoordOrient(QVector3D &position, QQuaternion &orientation) {
+    float delta_x = (float)rand()/(float)(RAND_MAX/30) - 15;
+    float delta_y = (float)rand()/(float)(RAND_MAX/30) - 15;
+    float delta_z = (float)rand()/(float)(RAND_MAX/30) - 15;
+
+    float theta_x = (float)rand()/(float)(RAND_MAX/360);
+    float theta_y = (float)rand()/(float)(RAND_MAX/180);
+    float theta_z = (float)rand()/(float)(RAND_MAX/360);
+
+    orientation = QQuaternion::fromEulerAngles(theta_x, theta_y, theta_z);
+
+    position = QVector3D(delta_x, delta_y, delta_z);
 }
 
 // Set default GL parameters.
@@ -108,6 +141,7 @@ void GLview::initializeShadowMapGL() {
     glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, border);
 
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthTex, 0);
+    // comment out for windows
 //    glDrawBuffer(GL_NONE);
 //    glReadBuffer(GL_NONE);
 
@@ -134,9 +168,29 @@ void GLview::resizeGL( int w, int h ) {
 
 
 // Set the model view matrix (MVP) for the light and camera
-void GLview::initLightCameraGL() {
+void GLview::initLightCameraGL(Mesh* mesh, long i) {
     QMatrix4x4 model, view, projection;
-    model.scale(1.0);
+    // scale down the object if they are too large
+    float largestDimension = mesh->dimensions.x();
+    if (mesh->dimensions.y() > largestDimension) largestDimension = mesh->dimensions.y();
+    if (mesh->dimensions.z() > largestDimension) largestDimension = mesh->dimensions.z();
+    if (largestDimension > 5) model.scale(5.0 / largestDimension);
+
+    float t = fmod(totalTime, 5.0) / 5.0;
+    long pos_size = positions.size();
+    long idx = i + (long(totalTime / 5) % pos_size);
+    if (idx >= pos_size) idx -= pos_size;
+    long idx2 = idx + 1;
+    if (idx2 >= pos_size) idx2 -= pos_size;
+    QQuaternion orientation = QQuaternion::slerp(orientations[idx],orientations[idx2],t);
+    QVector3D position = QQuaternion::slerp(QQuaternion(1, positions[idx]), QQuaternion(1, positions[idx2]), t).vector();
+
+    model.rotate(orientation);
+    if (largestDimension > 5)
+      model.translate(position * largestDimension / 5.0);
+    else
+      model.translate(position);
+
     view.rotate(camrot);
     view.translate(-eye);
     projection.perspective(yfov, (float)width() / (float)height(), neardist, fardist);
@@ -154,8 +208,7 @@ void GLview::initLightCameraGL() {
 }
 
 void GLview::paintGL() {
-    if(mesh == NULL) return;
-    initLightCameraGL(); // Update lighting and camara position.
+    if(meshList.size() == 0) return;
 
     // Bind shadow map buffer.
     glBindFramebuffer(GL_FRAMEBUFFER, shadow_FBO);
@@ -175,37 +228,46 @@ void GLview::paintGL() {
 
     // Update VBOs associated with phong shader.
     phong_shader.bind();
+    for (size_t i =0; i <meshList.size();i++){
+      Mesh *mesh = meshList.at(i);
+      initLightCameraGL(mesh, i); // Update lighting and camara position.
 
-    mesh->vertexBuffer.bind();
-    phong_shader.setAttributeBuffer( "VertexPosition", GL_FLOAT, 0, 3 );
-    phong_shader.enableAttributeArray( "VertexPosition" );
+//      QVector3D diff = positions.at(i+1) - positions.at(i);
+//      mesh->position.setX(mesh->position.x()+0.002*diff.x());
+//      mesh->position.setY(mesh->position.y()+0.002*diff.y());
+//      mesh->position.setZ(mesh->position.z()+0.002*diff.z());
 
-    mesh->normalBuffer.bind();
-    phong_shader.setAttributeBuffer( "VertexNormal", GL_FLOAT, 0, 3 );
-    phong_shader.enableAttributeArray( "VertexNormal" );
+      mesh->vertexBuffer.bind();
+      phong_shader.setAttributeBuffer( "VertexPosition", GL_FLOAT, 0, 3 );
+      phong_shader.enableAttributeArray( "VertexPosition" );
 
-    mesh->texCoordBuffer.bind();
-    phong_shader.setAttributeBuffer( "VertexTexCoord", GL_FLOAT, 0, 2 );
-    phong_shader.enableAttributeArray( "VertexTexCoord" );
+      mesh->normalBuffer.bind();
+      phong_shader.setAttributeBuffer( "VertexNormal", GL_FLOAT, 0, 3 );
+      phong_shader.enableAttributeArray( "VertexNormal" );
 
-    long total_drawn = 0;
-    for(long mtl_idx = 0; mtl_idx < (long)mesh->materials.size(); mtl_idx++) {
-      phong_shader.setUniformValue("Kd", mesh->materials[mtl_idx].Kd);
-      phong_shader.setUniformValue("Ks", mesh->materials[mtl_idx].Ks);
-      phong_shader.setUniformValue("Ka", mesh->materials[mtl_idx].Ka);
-      phong_shader.setUniformValue("Shininess", mesh->materials[mtl_idx].Ns);
-      phong_shader.setUniformValue("IsTexture", mesh->materials[mtl_idx].is_texture);
-      if(mesh->materials[mtl_idx].is_texture) {
-        mesh->materials[mtl_idx].map_Kd->bind(0);
-        phong_shader.setUniformValue("Tex1", GLuint(0));
+      mesh->texCoordBuffer.bind();
+      phong_shader.setAttributeBuffer( "VertexTexCoord", GL_FLOAT, 0, 2 );
+      phong_shader.enableAttributeArray( "VertexTexCoord" );
+
+      long total_drawn = 0;
+      for(long mtl_idx = 0; mtl_idx < (long)mesh->materials.size(); mtl_idx++) {
+        phong_shader.setUniformValue("Kd", mesh->materials[mtl_idx].Kd);
+        phong_shader.setUniformValue("Ks", mesh->materials[mtl_idx].Ks);
+        phong_shader.setUniformValue("Ka", mesh->materials[mtl_idx].Ka);
+        phong_shader.setUniformValue("Shininess", mesh->materials[mtl_idx].Ns);
+        phong_shader.setUniformValue("IsTexture", mesh->materials[mtl_idx].is_texture);
+        if(mesh->materials[mtl_idx].is_texture) {
+          mesh->materials[mtl_idx].map_Kd->bind(0);
+          phong_shader.setUniformValue("Tex1", GLuint(0));
+        }
+
+        // Hint: texture unit 0 is free for your textures. I've bound the shadow map to texture unit 1.
+        glActiveTexture(GL_TEXTURE1);
+        glBindTexture(GL_TEXTURE_2D, depthTex);
+
+        glDrawArrays( GL_TRIANGLES, total_drawn, 3*mesh->materials[mtl_idx].size );
+        total_drawn += 3*mesh->materials[mtl_idx].size;
       }
-
-      // Hint: texture unit 0 is free for your textures. I've bound the shadow map to texture unit 1.
-      glActiveTexture(GL_TEXTURE1);
-      glBindTexture(GL_TEXTURE_2D, depthTex);
-
-      glDrawArrays( GL_TRIANGLES, total_drawn, 3*mesh->materials[mtl_idx].size );
-      total_drawn += 3*mesh->materials[mtl_idx].size;
     }
 }
 
@@ -254,7 +316,7 @@ bool GLview::prepareShaderProgram(QOpenGLShaderProgram &prep_shader, const QStri
 
 // Store mouse press position. DO NOT MODIFY
 void GLview::mousePressEvent(QMouseEvent *event) {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
     float px = event->x(), py = event->y();
     float x = 2.0 * (px + 0.5) / float(width())  - 1.0,  y = -(2.0 * (py + 0.5) / float(height()) - 1.0);
     lastPosX = x; lastPosY = y;
@@ -264,7 +326,7 @@ void GLview::mousePressEvent(QMouseEvent *event) {
 
 // Update camera position on mouse movement. DO NOT MODIFY.
 void GLview::mouseMoveEvent(QMouseEvent *event) {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
 
     float px = event->x(), py = event->y();
     float x = 2.0 * (px + 0.5) / float(width())  - 1.0;
@@ -325,7 +387,7 @@ void GLview::mouseMoveEvent(QMouseEvent *event) {
 
 // toggle only the rotate flag
 void GLview::toggleRotate() {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
     translateFlag = scaleFlag = false;
     rotateFlag = !rotateFlag;
     setMouseTracking(rotateFlag);
@@ -335,7 +397,7 @@ void GLview::toggleRotate() {
 
 // toggle only the scale flag
 void GLview::toggleScale() {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
     translateFlag = rotateFlag = false;
     scaleFlag = !scaleFlag;
     setMouseTracking(scaleFlag);
@@ -345,7 +407,7 @@ void GLview::toggleScale() {
 
 // toggle only the translate flag
 void GLview::toggleTranslate() {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
     rotateFlag = scaleFlag = false;
     translateFlag = !translateFlag;
     setMouseTracking(translateFlag);
@@ -354,7 +416,7 @@ void GLview::toggleTranslate() {
 
 
 void GLview::toggleLightMotion() {
-    if(mesh == NULL) return;
+    if(meshList.empty()) return;
     lightMotionFlag = !lightMotionFlag;
 }
 
@@ -379,6 +441,19 @@ void GLview::updateGLview(float dt) {
             LightPosition = LightPosition2;
         }
     }
+
+    if (meshList.size()>1)
+        return;
+    eye = QVector3D(-3,3,3); lookCenter = QVector3D(-2,-2,0); lookUp = QVector3D(0,0,1);
+    e = QVector3D(-3,3,3), lc= QVector3D(1,1,0), lu = QVector3D(0,0,1);
+    QMatrix4x4 v1,v2;
+    v1.lookAt(eye, lookCenter, lookUp);
+    Matrix2Quaternion(camrot, v1);
+    v2.lookAt(e,lc,lu);
+    Matrix2Quaternion(camrot2, v2);
+    float t = fmod(totalTime, 2.0);
+    if (t > 1) t = 2 - t;
+    camrot = camrot.slerp(camrot,camrot2,t);
 }
 
 

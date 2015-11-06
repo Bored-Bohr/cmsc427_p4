@@ -16,16 +16,26 @@ public:
     void toggleLightMotion();
 protected:
     void initializeGL(); // QGLWidget OpenGL interface
-    void initLightCameraGL();
+    void initLightCameraGL(Mesh* mesh, long i);
     void paintGL();
     void resizeGL(int width, int height);
 
-    Mesh *mesh;  // Geometry data.
+
+//    float t = 0.01;
+//    bool tag = false, tag2 = false;
+    QVector3D e, lc,lu;
+    vector<QVector3D> positions;
+    vector<QQuaternion> orientations;
+
+    void randCoordOrient(QVector3D &position, QQuaternion &orientation);
+
+    //Mesh *mesh;  // Geometry data.
+    vector<Mesh*> meshList;
     QOpenGLShaderProgram phong_shader, texture_shader;
 
     // Camera parameters for the view frustum --------------
     QVector3D eye, lookCenter, lookUp;
-    QQuaternion camrot;
+    QQuaternion camrot, camrot2;
     float yfov, neardist, fardist;
 
     // Light animation speed.
